@@ -1,7 +1,0 @@
-from django.contrib import admin
-from .models import Song
-
-@admin.register(Song)
-class SongAdmin(admin.ModelAdmin):
-    list_display = ('title', 'artist', 'duration')
-    fields = ('title', 'artist', 'audio_file', 'audio_link', 'image', 'lyrics', 'duration')
