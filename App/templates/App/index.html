@@ -1,0 +1,705 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Django Music Player</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #000000 0%, #2a5298 100%);
+        min-height: 100vh;
+        padding: 20px;
+        color: #333;
+      }
+
+      .main-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .player-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+      }
+
+      .songs-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        max-height: 90vh;
+        overflow-y: auto;
+        width: auto;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        grid-column: 1 / -1;
+      }
+
+      .header h1 {
+        color: white;
+        font-size: 2.5rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .album-cover {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .album-cover img {
+        width: 250px;
+        height: 250px;
+        object-fit: cover;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s;
+      }
+
+      .album-cover img:hover {
+        transform: scale(1.05);
+      }
+
+      .song-info {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .song-info h2 {
+        color: #2a5298;
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+      }
+
+      .song-info h3 {
+        color: #666;
+        font-size: 1.3rem;
+        font-weight: normal;
+      }
+
+      .player-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 25px;
+        margin: 20px 0;
+      }
+
+      .control-btn {
+        background: #2a5298;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .control-btn:hover {
+        background: #1e3c72;
+        transform: scale(1.1);
+      }
+
+      .control-btn.play-pause {
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
+      }
+
+      .control-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .progress-container {
+        width: 100%;
+        height: 8px;
+        background: #ddd;
+        border-radius: 5px;
+        margin: 20px 0;
+        cursor: pointer;
+      }
+
+      .progress {
+        height: 100%;
+        background: #2a5298;
+        border-radius: 5px;
+        width: 0%;
+        transition: width 0.1s;
+      }
+
+      .time-display {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        color: #666;
+      }
+
+      .volume-control {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 15px 0;
+      }
+
+      .volume-icon {
+        font-size: 20px;
+        color: #2a5298;
+      }
+
+      .volume-slider {
+        flex: 1;
+        height: 5px;
+        -webkit-appearance: none;
+        background: #ddd;
+        border-radius: 5px;
+        outline: none;
+      }
+
+      .volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #2a5298;
+        cursor: pointer;
+      }
+
+      .current-lyrics {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 15px;
+        max-height: 200px;
+        overflow-y: auto;
+        text-align: center;
+      }
+
+      .current-lyrics h3 {
+        color: #2a5298;
+        margin-bottom: 15px;
+      }
+
+      .current-lyrics-text {
+        line-height: 1.6;
+        white-space: pre-line;
+      }
+
+      .songs-list h2 {
+        color: #2a5298;
+        margin-bottom: 20px;
+        text-align: center;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+      }
+
+      .song-card {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+
+      .song-card:hover {
+        border-color: #2a5298;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .song-card.active {
+        border-color: #2a5298;
+        background: #e6f3ff;
+      }
+
+      .song-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      .song-header img {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        object-fit: cover;
+      }
+
+      .song-details h3 {
+        color: #2a5298;
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+      }
+
+      .song-details p {
+        color: #666;
+        font-size: 1rem;
+      }
+
+      .song-lyrics {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #2a5298;
+        line-height: 1.6;
+        white-space: pre-line;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .song-lyrics h4 {
+        color: #2a5298;
+        margin-bottom: 10px;
+        font-size: 1rem;
+      }
+
+      .play-song-btn {
+        background: #2a5298;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+        margin-top: 10px;
+      }
+
+      .play-song-btn:hover {
+        background: #1e3c72;
+      }
+
+      .loading,
+      .error {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        font-style: italic;
+      }
+
+      .error {
+        color: #dc3545;
+        background: #f8d7da;
+        border-radius: 10px;
+      }
+
+      @media (max-width: 1024px) {
+        .main-container {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        .player-section {
+          position: relative;
+        }
+
+        .album-cover img {
+          width: 200px;
+          height: 200px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .player-controls {
+          gap: 15px;
+        }
+
+        .control-btn {
+          width: 50px;
+          height: 50px;
+          font-size: 20px;
+        }
+
+        .control-btn.play-pause {
+          width: 60px;
+          height: 60px;
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Django Music Player</h1>
+    </div>
+
+    <div class="main-container">
+      <!-- Player Section -->
+      <div class="player-section">
+        <div class="album-cover">
+          <img
+            src="/static/images/default-cover.jpg"
+            alt="Album Cover"
+            id="cover-image"
+            onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUwIiBoZWlnaHQ9IjI1MCIgdmlld0JveD0iMCAwIDI1MCAyNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTAiIGhlaWdodD0iMjUwIiBmaWxsPSIjZjBmMGYwIi8+CjxwYXRoIGQ9Ik0xMjUgNzVMMTc1IDEyNUwxMjUgMTc1TDc1IDEyNUwxMjUgNzVaIiBmaWxsPSIjY2NjIi8+Cjwvc3ZnPgo='"
+          />
+        </div>
+
+        <div class="song-info">
+          <h2 id="song-title">Select a Song</h2>
+          <h3 id="artist-name">Artist Name</h3>
+        </div>
+
+        <div class="player-controls">
+          <button class="control-btn" id="prev-btn" title="Previous Song">
+            <i class="fas fa-step-backward"></i>
+          </button>
+
+          <button class="control-btn play-pause" id="play-btn" title="Play">
+            <i class="fas fa-play"></i>
+          </button>
+
+          <button class="control-btn" id="next-btn" title="Next Song">
+            <i class="fas fa-step-forward"></i>
+          </button>
+        </div>
+
+        <div class="progress-container" id="progress-container">
+          <div class="progress" id="progress"></div>
+        </div>
+
+        <div class="time-display">
+          <span id="current-time">0:00</span>
+          <span id="duration">0:00</span>
+        </div>
+
+        <div class="volume-control">
+          <i class="fas fa-volume-up volume-icon" id="volume-icon"></i>
+          <input
+            type="range"
+            class="volume-slider"
+            id="volume-slider"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.7"
+          />
+        </div>
+
+        <audio id="audio-player" preload="metadata">
+          Your browser does not support the audio element.
+        </audio>
+
+        <div class="current-lyrics">
+          <h3>Current Song Lyrics</h3>
+          <div id="current-lyrics-text" class="current-lyrics-text">
+            Select a song to view lyrics
+          </div>
+        </div>
+      </div>
+
+      <!-- Songs List Section -->
+      <div class="songs-section">
+        <h2>All Songs</h2>
+        <div id="songs-container">
+          <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Loading songs...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Get DOM elements
+        const audioPlayer = document.getElementById("audio-player");
+        const playBtn = document.getElementById("play-btn");
+        const prevBtn = document.getElementById("prev-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const volumeSlider = document.getElementById("volume-slider");
+        const volumeIcon = document.getElementById("volume-icon");
+        const progressContainer = document.getElementById("progress-container");
+        const progress = document.getElementById("progress");
+        const currentTimeEl = document.getElementById("current-time");
+        const durationEl = document.getElementById("duration");
+        const songTitle = document.getElementById("song-title");
+        const artistName = document.getElementById("artist-name");
+        const coverImage = document.getElementById("cover-image");
+        const currentLyricsText = document.getElementById(
+          "current-lyrics-text"
+        );
+        const songsContainer = document.getElementById("songs-container");
+
+        // Player state
+        let songs = [];
+        let currentSongIndex = 0;
+        let isPlaying = false;
+
+        // Set initial volume
+        audioPlayer.volume = 0.7;
+
+        // Format time for display
+        function formatTime(seconds) {
+          if (isNaN(seconds)) return "0:00";
+          const mins = Math.floor(seconds / 60);
+          const secs = Math.floor(seconds % 60);
+          return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+        }
+
+        // Load song
+        function loadSong(index) {
+          if (songs.length === 0 || index < 0 || index >= songs.length) return;
+
+          const song = songs[index];
+          songTitle.textContent = song.title;
+          artistName.textContent = song.artist;
+
+          // Set audio source
+          if (song.audio_file) {
+            audioPlayer.src = song.audio_file;
+          } else {
+            console.error("No audio source available for song:", song.title);
+            return;
+          }
+
+          // Set cover image
+          coverImage.src =
+            song.image ||
+            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUwIiBoZWlnaHQ9IjI1MCIgdmlld0JveD0iMCAwIDI1MCAyNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTAiIGhlaWdodD0iMjUwIiBmaWxsPSIjZjBmMGYwIi8+CjxwYXRoIGQ9Ik0xMjUgNzVMMTc1IDEyNUwxMjUgMTc1TDc1IDEyNUwxMjUgNzVaIiBmaWxsPSIjY2NjIi8+Cjwvc3ZnPgo=";
+          coverImage.alt = song.title;
+
+          // Set current lyrics
+          currentLyricsText.textContent = song.lyrics || "No lyrics available";
+
+          // Update song cards highlighting
+          document.querySelectorAll(".song-card").forEach((card, i) => {
+            if (i === index) {
+              card.classList.add("active");
+            } else {
+              card.classList.remove("active");
+            }
+          });
+
+          // Update button states
+          prevBtn.disabled = songs.length <= 1;
+          nextBtn.disabled = songs.length <= 1;
+        }
+
+        // Play song
+        function playSong() {
+          if (songs.length === 0) return;
+
+          const playPromise = audioPlayer.play();
+
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                isPlaying = true;
+                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                playBtn.title = "Pause";
+              })
+              .catch((error) => {
+                console.error("Playback failed:", error);
+                alert(
+                  "Playback failed. Please check the audio file or try another song."
+                );
+              });
+          }
+        }
+
+        // Pause song
+        function pauseSong() {
+          isPlaying = false;
+          playBtn.innerHTML = '<i class="fas fa-play"></i>';
+          playBtn.title = "Play";
+          audioPlayer.pause();
+        }
+
+        // Previous song
+        function prevSong() {
+          if (songs.length === 0) return;
+          currentSongIndex =
+            currentSongIndex > 0 ? currentSongIndex - 1 : songs.length - 1;
+          loadSong(currentSongIndex);
+          if (isPlaying) playSong();
+        }
+
+        // Next song
+        function nextSong() {
+          if (songs.length === 0) return;
+          currentSongIndex = (currentSongIndex + 1) % songs.length;
+          loadSong(currentSongIndex);
+          if (isPlaying) playSong();
+        }
+
+        // Update progress bar
+        function updateProgress() {
+          const { currentTime, duration } = audioPlayer;
+          if (duration) {
+            const progressPercent = (currentTime / duration) * 100;
+            progress.style.width = `${progressPercent}%`;
+            currentTimeEl.textContent = formatTime(currentTime);
+            durationEl.textContent = formatTime(duration);
+          }
+        }
+
+        // Set progress when clicking on progress bar
+        function setProgress(e) {
+          const width = this.clientWidth;
+          const clickX = e.offsetX;
+          const duration = audioPlayer.duration;
+
+          if (!isNaN(duration)) {
+            audioPlayer.currentTime = (clickX / width) * duration;
+          }
+        }
+
+        // Create song cards
+        function createSongCards(songsData) {
+          songsContainer.innerHTML = "";
+
+          if (songsData.length === 0) {
+            songsContainer.innerHTML = `
+              <div class="error">
+                No songs available. Add songs to your Django backend.
+              </div>
+            `;
+            return;
+          }
+
+          songsData.forEach((song, index) => {
+            const songCard = document.createElement("div");
+            songCard.className = "song-card";
+            songCard.innerHTML = `
+              <div class="song-header">
+                <img src="${
+                  song.image ||
+                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjBmMGYwIi8+CjxwYXRoIGQ9Ik0zMCAxOEw0MiAzMEwzMCA0MkwxOCAzMEwzMCAxOFoiIGZpbGw9IiNjY2MiLz4KPC9zdmc+Cg=="
+                }" alt="${
+              song.title
+            }" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjBmMGYwIi8+CjxwYXRoIGQ9Ik0zMCAxOEw0MiAzMEwzMCA0MkwxOCAzMEwzMCAxOFoiIGZpbGw9IiNjY2MiLz4KPC9zdmc+Cg=='">
+                <div class="song-details">
+                  <h3>${song.title}</h3>
+                  <p>${song.artist}</p>
+                </div>
+              </div>
+              <button class="play-song-btn" onclick="selectSong(${index})">
+                <i class="fas fa-play"></i> Play Song
+              </button>
+              <div class="song-lyrics">
+                <h4>Lyrics:</h4>
+                ${song.lyrics || "No lyrics available"}
+              </div>
+            `;
+
+            songCard.addEventListener("click", function (e) {
+              if (!e.target.classList.contains("play-song-btn")) {
+                selectSong(index);
+              }
+            });
+
+            songsContainer.appendChild(songCard);
+          });
+        }
+
+        // Select and play song
+        window.selectSong = function (index) {
+          currentSongIndex = index;
+          loadSong(currentSongIndex);
+          playSong();
+        };
+
+        // Load songs from Django backend
+        async function loadSongsFromBackend() {
+          try {
+            const response = await fetch("/api/songs/");
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const songsData = await response.json();
+            songs = songsData;
+
+            createSongCards(songs);
+
+            if (songs.length > 0) {
+              loadSong(currentSongIndex);
+            }
+          } catch (error) {
+            console.error("Error loading songs:", error);
+            songsContainer.innerHTML = `
+              <div class="error">
+                <i class="fas fa-exclamation-circle"></i>
+                Error loading songs: ${error.message}<br>
+                <small>Make sure your Django server is running and the API endpoint is accessible at <strong>/api/songs/</strong></small>
+              </div>
+            `;
+          }
+        }
+
+        // Event listeners
+        playBtn.addEventListener("click", () => {
+          if (songs.length === 0) {
+            alert(
+              "No songs available. Please add songs to your Django backend."
+            );
+            return;
+          }
+          isPlaying ? pauseSong() : playSong();
+        });
+
+        prevBtn.addEventListener("click", prevSong);
+        nextBtn.addEventListener("click", nextSong);
+
+        audioPlayer.addEventListener("timeupdate", updateProgress);
+        audioPlayer.addEventListener("loadedmetadata", () => {
+          durationEl.textContent = formatTime(audioPlayer.duration);
+        });
+
+        audioPlayer.addEventListener("ended", nextSong);
+
+        progressContainer.addEventListener("click", setProgress);
+
+        volumeSlider.addEventListener("input", function () {
+          audioPlayer.volume = volumeSlider.value;
+
+          // Update volume icon
+          if (audioPlayer.volume == 0) {
+            volumeIcon.className = "fas fa-volume-mute volume-icon";
+          } else if (audioPlayer.volume < 0.5) {
+            volumeIcon.className = "fas fa-volume-down volume-icon";
+          } else {
+            volumeIcon.className = "fas fa-volume-up volume-icon";
+          }
+        });
+
+        // Initialize the player
+        loadSongsFromBackend();
+      });
+      document.addEventListener("");
+    </script>
+  </body>
+</html>
